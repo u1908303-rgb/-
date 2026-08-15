@@ -1,0 +1,86 @@
+local F = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local W = F:CreateWindow({
+    Title = "wakHUB 👑",
+    SubTitle = "v1.0",
+    TabWidth = 140,
+    Size = UDim2.fromOffset(450, 350),
+    Acrylic = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.F4
+})
+
+local T = W:AddTab({ Title = "Main", Icon = "home" })
+local P, L, M = game:GetService("Players"), game.Players.LocalPlayer, game.Players.LocalPlayer:GetMouse()
+local f, s = false, 50
+
+-- Auto Farm
+T:AddSection("Farm")
+T:AddToggle("AF", { Title = "Auto Farm", Default = false })
+
+-- Movement
+T:AddSection("Move")
+T:AddToggle("Fly", { Title = "Fly", Default = false }):OnChanged(function(v)
+    f = v
+    local h = L.Character and L.Character:FindFirstChild("HumanoidRootPart")
+    if v and h then
+        local g, b = Instance.new("BodyGyro", h), Instance.new("BodyVelocity", h)
+        g.MaxTorque, b.MaxForce = Vector3.new(1/0, 1/0, 1/0), Vector3.new(1/0, 1/0, 1/0)
+        task.spawn(function()
+            while f and h do
+                local c, U = workspace.CurrentCamera.CFrame, game:GetService("UserInputService")
+                local d = (U:IsKeyDown(Enum.KeyCode.W) and c.LookVector or Vector3.zero)
+                        + (U:IsKeyDown(Enum.KeyCode.S) and -c.LookVector or Vector3.zero)
+                        + (U:IsKeyDown(Enum.KeyCode.A) and -c.RightVector or Vector3.zero)
+                        + (U:IsKeyDown(Enum.KeyCode.D) and c.RightVector or Vector3.zero)
+                g.CFrame, b.Velocity = c, d * s
+                task.wait()
+            end
+        end)
+    elseif h then
+        for _, i in pairs(h:GetChildren()) do
+            if i:IsA("BodyGyro") or i:IsA("BodyVelocity") then
+                i:Destroy()
+            end
+        end
+    end
+end)
+
+T:AddSlider("Spd", { Title = "Fly Spd", Default = 50, Min = 10, Max = 300, Callback = function(v) s = v end })
+
+-- Combat
+T:AddSection("Combat")
+T:AddToggle("ESP", { Title = "ESP", Default = false }):OnChanged(function(v) _G.e = v end)
+T:AddToggle("Lock", { Title = "Aim Lock", Default = false }):OnChanged(function(v) _G.l = v end)
+
+-- Loops
+game:GetService("RunService").RenderStepped:Connect(function()
+    if _G.e then
+        for _, p in pairs(P:GetPlayers()) do
+            if p ~= L and p.Character and p.Character:FindFirstChild("Head") and not p.Character.Head:FindFirstChild("ESP") then
+                local g = Instance.new("BillboardGui", p.Character.Head)
+                g.Name = "ESP"
+                g.AlwaysOnTop = true
+                g.Size = UDim2.new(0, 100, 0, 50)
+                local lb = Instance.new("TextLabel", g)
+                lb.Text = p.Name
+                lb.TextColor3 = Color3.new(1, 0, 0)
+                lb.BackgroundTransparency = 1
+            end
+        end
+    end
+    if _G.l then
+        local t, d = nil, math.huge
+        for _, p in pairs(P:GetPlayers()) do
+            if p ~= L and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local p2 = workspace.CurrentCamera:WorldToViewportPoint(p.Character.HumanoidRootPart.Position)
+                local m = (Vector2.new(M.X, M.Y) - Vector2.new(p2.X, p2.Y)).Magnitude
+                if m < d then
+                    d, t = m, p.Character.HumanoidRootPart
+                end
+            end
+        end
+        if t then
+            workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, t.Position)
+        end
+    end
+end)
