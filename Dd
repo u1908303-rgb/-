@@ -1,0 +1,42 @@
+local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/main/main.lua"))()
+local Window = Fluent:CreateWindow({Title = "wakHUB 👑", MinimizeKey = Enum.KeyCode.G})
+local MainTab = Window:AddTab({Title = "Main"})
+local PvpTab = Window:AddTab({Title = "PVP"})
+local P, L, M = game:GetService("Players"), game.Players.LocalPlayer, game.Players.LocalPlayer:GetMouse()
+local fly, spd, target = false, 50, nil
+
+-- Main Tab
+MainTab:AddToggle("Fly", {Title = "บิน (Fly)", Default = false}):OnChanged(function(v)
+    fly = v
+    local h = L.Character and L.Character:FindFirstChild("HumanoidRootPart")
+    if v and h then
+        local g, b = Instance.new("BodyGyro", h), Instance.new("BodyVelocity", h)
+        g.MaxTorque, b.MaxForce = Vector3.new(1/0,1/0,1/0), Vector3.new(1/0,1/0,1/0)
+        task.spawn(function() while fly and h do
+            local c, U = workspace.CurrentCamera.CFrame, game:GetService("UserInputService")
+            local d = (U:IsKeyDown(Enum.KeyCode.W)and c.LookVector or Vector3.zero)+(U:IsKeyDown(Enum.KeyCode.S)and-c.LookVector or Vector3.zero)+(U:IsKeyDown(Enum.KeyCode.A)and-c.RightVector or Vector3.zero)+(U:IsKeyDown(Enum.KeyCode.D)and c.RightVector or Vector3.zero)
+            g.CFrame, b.Velocity = c, d * spd task.wait()
+        end end)
+    elseif h then for _,i in pairs(h:GetChildren()) do if i:IsA("BodyGyro") or i:IsA("BodyVelocity") then i:Destroy() end end end
+end)
+MainTab:AddSlider("Spd", {Title = "ความเร็วบิน", Default = 50, Min = 10, Max = 300, Callback = function(v) spd = v end})
+
+-- PVP Tab
+local playerList = {}
+for _, p in pairs(P:GetPlayers()) do if p ~= L then table.insert(playerList, p.Name) end end
+local Dropdown = PvpTab:AddDropdown("Select", {Title = "เลือกผู้เล่น", Values = playerList})
+Dropdown:OnChanged(function(v) target = P:FindFirstChild(v) end)
+
+PvpTab:AddToggle("Lock", {Title = "ล็อคเป้าหมาย", Default = false}):OnChanged(function(v) _G.lock = v end)
+PvpTab:AddButton({Title = "บินเข้าหาเป้าหมาย", Callback = function()
+    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+        L.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame
+    end
+end})
+
+-- Loop Functions
+game:GetService("RunService").RenderStepped:Connect(function()
+    if _G.lock and target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+        workspace.CurrentCamera.CFrame = CFrame.new(workspace.CurrentCamera.CFrame.Position, target.Character.HumanoidRootPart.Position)
+    end
+end)
